@@ -11,6 +11,7 @@ pipeline {
             steps {
                 echo "Checking out GitHub repository..."
                 sh """
+                    rm -rf repo
                     git clone https://\$GITHUB_TOKEN@github.com/Manish-Kumar-Rai/jenkins-pipeline.git repo
                     cd repo
                     git status
