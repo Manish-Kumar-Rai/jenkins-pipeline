@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKER_PWD = credentials('docker-login-pwd')  // Docker Hub password
-        GITHUB_TOKEN = credentials('github-pat')      // GitHub PAT
+        GITHUB_TOKEN = credentials('git-token')      // GitHub PAT
         DOCKER_USER = 'mkrai'                         // Your Docker Hub username
         REPO_URL = 'https://github.com/Manish-Kumar-Rai/jenkins-pipeline.git'
     }
