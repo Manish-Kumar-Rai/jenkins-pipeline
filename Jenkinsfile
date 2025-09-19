@@ -1,35 +1,47 @@
 pipeline {
-    agent any
+    environment {
+        registry = "mkrai/jenkins-docker-test"
+        DOCKER_PWD = credentials('docker-login-pwd')
+    }
+    agent {
+        docker {
+            image 'gnschenker/node-docker'
+            args '-p 3000:3000'
+            args '-w /app'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
     options {
         skipStagesAfterUnstable()
     }
     stages {
-        stage('Checkout') {
+        stage("Build"){
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Manish-Kumar-Rai/jenkins-pipeline.git',
-                    credentialsId: 'github-jenkins-token' // <-- Your Jenkins credentials ID
+                sh 'npm install'
             }
         }
-        stage('Build') {
+        stage("Test"){
             steps {
-                echo 'Building'
+                sh 'npm test'
             }
         }
-        stage('Test') {
+        stage("Build & Push Docker image") {
             steps {
-                echo 'Testing'
+                sh 'docker image build -t $registry:$BUILD_NUMBER'
+                sh 'docker login -u mkrai -p $DOCKER_PWD'
+                sh 'docker image push $registry:$BUILD_NUMBER'
+                sh "docker image rm $registry:$BUILD_NUMBER"
             }
         }
-        stage('Deploy to Staging') {
+        stage("Deploy and smoke test") {
             steps {
-                echo 'Deploying to Staging'
+                sh './jenkins/scripts/deploy.sh'
             }
         }
-        stage('Deploy to Production') {
+        stage("Cleanup") {
             steps {
-                echo 'Deploying to Production'
+                sh './jenkins/scripts/cleanup.sh'
             }
-        }
+        }   
     }
 }
