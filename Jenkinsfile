@@ -1,8 +1,8 @@
 pipeline {
     environment {
         registry = "mkrai/jenkins-docker-test"
-        DOCKER_PWD = credentials('docker-login-pwd')
-        GITHUB_TOKEN = credentials('git-token')
+        DOCKER_PWD = credentials('docker-login-pwd')   // Docker Hub password
+        GITHUB_TOKEN = credentials('git-token')       // GitHub PAT
     }
     agent {
         docker {
@@ -14,19 +14,28 @@ pipeline {
         skipStagesAfterUnstable()
     }
     stages {
-        stage("Build"){
+        stage("Checkout") {
             steps {
-                sh 'npm install'
+                // Clone your GitHub repo using PAT
+                sh '''
+                    git clone https://github.com/Manish-Kumar-Rai/jenkins-pipeline.git app
+                    cd app
+                '''
             }
         }
-        stage("Test"){
+        stage("Build") {
             steps {
-                sh 'npm test'
+                sh 'cd app && npm install'
+            }
+        }
+        stage("Test") {
+            steps {
+                sh 'cd app && npm test'
             }
         }
         stage("Build & Push Docker image") {
             steps {
-                sh 'docker image build -t $registry:$BUILD_NUMBER'
+                sh 'docker image build -t $registry:$BUILD_NUMBER app'
                 sh 'docker login -u mkrai -p $DOCKER_PWD'
                 sh 'docker image push $registry:$BUILD_NUMBER'
                 sh "docker image rm $registry:$BUILD_NUMBER"
@@ -41,6 +50,6 @@ pipeline {
             steps {
                 sh './jenkins/scripts/cleanup.sh'
             }
-        }   
+        }
     }
 }
