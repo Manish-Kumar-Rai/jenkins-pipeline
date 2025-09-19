@@ -4,12 +4,7 @@ pipeline {
         DOCKER_PWD = credentials('docker-login-pwd')   // Docker Hub password
         GITHUB_TOKEN = credentials('git-token')       // GitHub PAT
     }
-    agent {
-        docker {
-            image 'mkrai/node-docker'
-            args '-p 3000:3000 -w /app -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
     options {
         skipStagesAfterUnstable()
     }
