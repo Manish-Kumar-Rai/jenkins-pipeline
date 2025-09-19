@@ -1,28 +1,54 @@
 pipeline {
-    agent any
     environment {
-        DOCKER_PWD = credentials('docker-login-pwd')  // Docker Hub password
-        GITHUB_TOKEN = credentials('git-token')      // GitHub PAT
-        DOCKER_USER = 'mkrai'                         // Your Docker Hub username
-        REPO_URL = 'https://github.com/Manish-Kumar-Rai/jenkins-pipeline.git'
+        registry = "mkrai/jenkins-docker-test"
+        DOCKER_PWD = credentials('docker-login-pwd')   // Docker Hub password
+        GITHUB_TOKEN = credentials('git-token')       // GitHub PAT
+    }
+    agent {
+        docker {
+            image 'mkrai/node-docker'
+            args '-p 3000:3000 -w /app -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+    options {
+        skipStagesAfterUnstable()
     }
     stages {
-        stage("Checkout GitHub") {
+        stage("Checkout") {
             steps {
-                echo "Checking out GitHub repository..."
-                sh """
-                    rm -rf repo
-                    git clone https://\$GITHUB_TOKEN@github.com/Manish-Kumar-Rai/jenkins-pipeline.git repo
-                    cd repo
-                    git status
-                """
+                // Clone your GitHub repo using PAT
+                sh '''
+                    git clone https://github.com/Manish-Kumar-Rai/jenkins-pipeline.git app
+                    cd app
+                '''
             }
         }
-        stage("Docker Login") {
+        stage("Build") {
             steps {
-                echo "Logging into Docker Hub..."
-                sh "echo \$DOCKER_PWD | docker login -u \$DOCKER_USER --password-stdin"
-                sh "docker info"
+                sh 'cd app && npm install'
+            }
+        }
+        stage("Test") {
+            steps {
+                sh 'cd app && npm test'
+            }
+        }
+        stage("Build & Push Docker image") {
+            steps {
+                sh 'docker image build -t $registry:$BUILD_NUMBER app'
+                sh 'docker login -u mkrai -p $DOCKER_PWD'
+                sh 'docker image push $registry:$BUILD_NUMBER'
+                sh "docker image rm $registry:$BUILD_NUMBER"
+            }
+        }
+        stage("Deploy and smoke test") {
+            steps {
+                sh './jenkins/scripts/deploy.sh'
+            }
+        }
+        stage("Cleanup") {
+            steps {
+                sh './jenkins/scripts/cleanup.sh'
             }
         }
     }
