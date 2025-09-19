@@ -2,6 +2,7 @@ pipeline {
     environment {
         registry = "mkrai/jenkins-docker-test"
         DOCKER_PWD = credentials('docker-login-pwd')
+        GITHUB_TOKEN = credentials('git-token')
     }
     agent {
         docker {
