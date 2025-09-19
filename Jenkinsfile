@@ -44,12 +44,12 @@ pipeline {
         }
         stage("Deploy and smoke test") {
             steps {
-                sh './jenkins/scripts/deploy.sh'
+                sh 'sh ./jenkins/scripts/deploy.sh'
             }
         }
         stage("Cleanup") {
             steps {
-                sh './jenkins/scripts/cleanup.sh'
+                sh 'sh ./jenkins/scripts/cleanup.sh'
             }
         }
     }
